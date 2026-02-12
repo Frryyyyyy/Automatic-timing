@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>45分钟专注器 · 独立撤销</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
+        }
+        body {
+            background: linear-gradient(145deg, #f6f9fc 0%, #e9f0f5 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .card {
+            max-width: 1100px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 20px 35px -8px rgba(0,20,40,0.25);
+            border-radius: 32px;
+            padding: 30px 30px 40px;
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+        h2 {
+            font-weight: 600;
+            font-size: 1.9rem;
+            margin-top: 0;
+            margin-bottom: 12px;
+            color: #0a3143;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: -0.5px;
+            border-bottom: 3px solid #2c7da0;
+            padding-bottom: 15px;
+        }
+        .task-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            margin: 25px 0 10px;
+        }
+        .task-row {
+            background: white;
+            border-radius: 20px;
+            padding: 16px 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            border: 1px solid #e2ecf0;
+            transition: all 0.15s;
+        }
+        .task-desc {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            flex: 2 1 240px;
+        }
+        .task-icon {
+            background: #1e4a5f;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        .task-text {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: #0b3b4a;
+            word-break: break-word;
+        }
+        .time-stamp {
+            font-family: 'Fira Code', 'JetBrains Mono', monospace;
+            background: #f2f7fa;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            color: #1c6a7a;
+            letter-spacing: 0.5px;
+            border: 1px solid #cbdbe2;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin: 6px 0;
+            white-space: nowrap;
+        }
+        .btn-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            flex: 1 0 320px;
+        }
+        .action-btn {
+            background: #1e6f8c;
+            border: none;
+            color: white;
+            font-weight: 600;
+            font-size: 0.98rem;
+            padding: 10px 20px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 6px 0 #0e3b4a, 0 8px 16px rgba(0,60,80,0.1);
+            transition: all 0.05s linear;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.3);
+            letter-spacing: 0.6px;
+        }
+        .action-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 2px 0 #0e3b4a, 0 10px 20px rgba(0,60,80,0.1);
+        }
+        .action-btn:disabled {
+            background: #9bb8c4;
+            box-shadow: 0 4px 0 #50707a;
+            transform: translateY(2px);
+            cursor: not-allowed;
+            opacity: 0.8;
+            pointer-events: none;
+            color: #edf2f4;
+        }
+        /* 撤销按钮样式 — 清新中性 */
+        .cancel-btn {
+            background: #cedfe4;
+            border: 1px solid #a0b9c2;
+            color: #1e4e5c;
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 10px 18px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 5px 0 #899ca3, 0 6px 12px rgba(0,0,0,0.04);
+            transition: all 0.05s linear;
+            cursor: pointer;
+        }
+        .cancel-btn:active {
+            transform: translateY(5px);
+            box-shadow: 0 1px 0 #6d878e, 0 8px 16px rgba(0,0,0,0.04);
+        }
+        .cancel-btn:hover {
+            background: #e2edf2;
+            border-color: #8db3bf;
+        }
+        .reset-hint {
+            margin-top: 35px;
+            padding: 16px 20px;
+            background: #e1f0f4;
+            border-radius: 60px;
+            color: #14515f;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.95rem;
+            border: 1px dashed #2a7f8c;
+        }
+        .badge {
+            background: #0e4f5e;
+            color: white;
+            padding: 5px 18px;
+            border-radius: 50px;
+            font-weight: 500;
+        }
+        .footer {
+            margin-top: 10px;
+            text-align: right;
+            color: #3a6e7c;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>⏳ 专注·独立撤销版</h2>
+        <div class="task-grid" id="taskGrid"></div>
+
+        <div class="reset-hint">
+            <span style="display:flex; gap:6px;">🧹 每一行配有【取消】按钮，点击后立即解除冷却、清除时间记录</span>
+            <span class="badge" id="globalClock">⏲️ 加载中...</span>
+        </div>
+        <div class="footer">
+            🕒 时间格式：<strong>月-日 时-分-秒</strong> · 取消后按钮立即恢复、时间戳清空
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            const TASKS = [
+                '📋 撰写项目需求文档',
+                '🎨 设计用户界面原型',
+                '🛠️ 修复登录模块缺陷',
+                '🧪 执行集成测试用例',
+                '📊 分析性能监控数据',
+                '📝 整理周报及计划'
+            ];
+
+            // 存储每个按钮的失效截止时间戳 (毫秒) , 0 表示没有激活
+            let disabledUntil = new Array(6).fill(0);
+            let timerInterval = null;
+
+            const grid = document.getElementById('taskGrid');
+
+            // ----- 格式化时间: 月-日 时-分-秒 (两位数) -----
+            function formatDateTime(date) {
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                const seconds = String(date.getSeconds()).padStart(2, '0');
+                return `${month}-${day} ${hours}-${minutes}-${seconds}`;
+            }
+
+            // ----- 完全重新渲染所有行，基于当前状态 + localStorage记录的时间文本 -----
+            function renderRows() {
+                let html = '';
+                const now = Date.now();
+
+                for (let i = 0; i < TASKS.length; i++) {
+                    const taskDesc = TASKS[i];
+                    const until = disabledUntil[i];
+                    const isDisabled = (until > now);
+
+                    // 读取记录的时间字符串（如果有）
+                    const storageKey = `task_timestamp_${i}`;
+                    let savedTimeStr = localStorage.getItem(storageKey) || '';
+                    let displayTime = savedTimeStr;  // 可能为空字符串
+
+                    // ---- 构建行 ----
+                    html += `<div class="task-row" data-row-index="${i}">`;
+                    
+                    // 左侧描述区
+                    html += `<div class="task-desc">`;
+                    html += `<span class="task-icon">${i + 1}</span>`;
+                    html += `<span class="task-text">${taskDesc}</span>`;
+                    html += `</div>`;
+
+                    // 右侧按钮组：时间戳 + 开始按钮 + 取消按钮
+                    html += `<div class="btn-group">`;
+
+                    // 时间戳展示
+                    if (displayTime) {
+                        html += `<span class="time-stamp">🕒 ${displayTime}</span>`;
+                    } else {
+                        html += `<span class="time-stamp" style="color:#6f9aa7; background:#e7f0f3;">⏱️ 未开始</span>`;
+                    }
+
+                    // ----- 开始任务按钮（主按钮）-----
+                    html += `<button class="action-btn start-btn" data-id="${i}" ${isDisabled ? 'disabled' : ''}>`;
+                    if (isDisabled) {
+                        const remainMs = until - now;
+                        const remainMin = Math.floor(remainMs / 60000);
+                        const remainSec = Math.floor((remainMs % 60000) / 1000);
+                        html += `⏳ 冷却中 (${remainMin}分${remainSec}秒)`;
+                    } else {
+                        html += `✅ 开始任务`;
+                    }
+                    html += `</button>`;
+
+                    // ----- 取消按钮（撤销）：任何时候都可见，点击后清除状态、时间记录、解除冷却 -----
+                    html += `<button class="cancel-btn cancel-btn-style" data-cancel-id="${i}">`;
+                    html += `❌ 取消`;
+                    html += `</button>`;
+
+                    html += `</div>`; // btn-group
+                    html += `</div>`; // task-row
+                }
+                grid.innerHTML = html;
+            }
+
+            // ----- 持久化失效截止时间（用于刷新后恢复冷却）-----
+            function persistExpiry() {
+                for (let i = 0; i < TASKS.length; i++) {
+                    const expireKey = `task_expire_${i}`;
+                    if (disabledUntil[i] > 0) {
+                        localStorage.setItem(expireKey, disabledUntil[i].toString());
+                    } else {
+                        localStorage.removeItem(expireKey);
+                    }
+                }
+            }
+
+            // ----- 从 localStorage 加载持久化状态 -----
+            function loadPersistedState() {
+                const now = Date.now();
+                for (let i = 0; i < TASKS.length; i++) {
+                    // 尝试加载失效截止时间
+                    const expireKey = `task_expire_${i}`;
+                    const expire = localStorage.getItem(expireKey);
+                    if (expire) {
+                        const expireTime = parseInt(expire, 10);
+                        if (!isNaN(expireTime) && expireTime > now) {
+                            disabledUntil[i] = expireTime;
+                        } else {
+                            disabledUntil[i] = 0;
+                            localStorage.removeItem(expireKey);
+                            // 但保留时间戳文本（作为历史记录，但按钮可用）。我们保留timestamp。
+                        }
+                    } else {
+                        disabledUntil[i] = 0;
+                    }
+
+                    // 兼容旧数据：如果没有timestamp_key，那就不显示时间；如果有expire但无timestamp？保留timestamp不删除。
+                }
+            }
+
+            // ----- 清除某一行的所有状态（撤销操作）-----
+            function cancelTask(index) {
+                if (index === undefined || index === null || index < 0 || index >= TASKS.length) return;
+
+                // 1. 清除失效截止时间
+                disabledUntil[index] = 0;
+
+                // 2. 移除 localStorage 中的时间记录 以及 失效截止key
+                const timeKey = `task_timestamp_${index}`;
+                localStorage.removeItem(timeKey);
+                const expireKey = `task_expire_${index}`;
+                localStorage.removeItem(expireKey);
+
+                // 3. 重新渲染 (按钮立即可用，时间戳消失)
+                renderRows();
+                updateGlobalClock();
+            }
+
+            // ----- 处理【开始任务】点击-----
+            function handleStartClick(index) {
+                const now = Date.now();
+                // 双重验证：是否已被禁用
+                if (disabledUntil[index] > now) return;
+
+                // 记录当前时间并格式化
+                const clickDate = new Date();
+                const formatted = formatDateTime(clickDate);
+
+                // 保存时间戳到 localStorage
+                const storageKey = `task_timestamp_${index}`;
+                localStorage.setItem(storageKey, formatted);
+
+                // 设置冷却截止时间：45分钟 = 45*60*1000
+                disabledUntil[index] = now + 45 * 60 * 1000;
+
+                // 持久化截止时间
+                persistExpiry();
+
+                // 重新渲染
+                renderRows();
+                updateGlobalClock();
+            }
+
+            // ----- 全局事件代理（同时处理 开始按钮 和 取消按钮）-----
+            function handleGridClick(e) {
+                let target = e.target;
+                while (target && target !== grid) {
+                    
+                    // 1. 开始按钮 (类名包含 start-btn)
+                    if (target.tagName === 'BUTTON' && target.classList.contains('start-btn')) {
+                        const id = target.getAttribute('data-id');
+                        if (id !== null) {
+                            const idx = parseInt(id, 10);
+                            if (!isNaN(idx)) {
+                                e.preventDefault?.();
+                                handleStartClick(idx);
+                            }
+                        }
+                        return; // 防止同时触发取消
+                    }
+
+                    // 2. 取消按钮 (类名包含 cancel-btn-style 或 data-cancel-id 属性)
+                    if (target.tagName === 'BUTTON' && target.classList.contains('cancel-btn-style')) {
+                        const cancelId = target.getAttribute('data-cancel-id');
+                        if (cancelId !== null) {
+                            const idx = parseInt(cancelId, 10);
+                            if (!isNaN(idx)) {
+                                e.preventDefault?.();
+                                cancelTask(idx);
+                            }
+                        }
+                        return;
+                    }
+                    target = target.parentNode;
+                }
+            }
+
+            // ----- 滴答计时器：每秒重绘，处理过期，持久化-----
+            function tick() {
+                const now = Date.now();
+                let needStateChange = false;
+                for (let i = 0; i < disabledUntil.length; i++) {
+                    if (disabledUntil[i] > 0 && disabledUntil[i] <= now) {
+                        disabledUntil[i] = 0;
+                        localStorage.removeItem(`task_expire_${i}`);
+                        needStateChange = true;
+                    }
+                }
+                if (needStateChange) {
+                    persistExpiry();
+                }
+                // 无论如何都重绘（刷新按钮上的倒计时数字）
+                renderRows();
+                updateGlobalClock();
+            }
+
+            // ----- 更新右上角时间-----
+            function updateGlobalClock() {
+                const el = document.getElementById('globalClock');
+                if (el) {
+                    const now = new Date();
+                    el.innerText = `📅 ${formatDateTime(now)}`;
+                }
+            }
+
+            // ----- 初始化-----
+            function init() {
+                loadPersistedState();
+                renderRows();
+                updateGlobalClock();
+
+                if (grid) {
+                    grid.addEventListener('click', handleGridClick);
+                }
+
+                if (timerInterval) clearInterval(timerInterval);
+                timerInterval = setInterval(tick, 500);
+            }
+
+            init();
+
+            // 页面关闭前持久化一次
+            window.addEventListener('beforeunload', function() {
+                persistExpiry();
+            });
+        })();
+    </script>
+</body>
+</html>
